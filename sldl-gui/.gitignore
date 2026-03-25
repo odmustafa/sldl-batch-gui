@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-electron/
+release/
+tmp-*/
+tmp-*.asar
+2026 1 14 Garage night GE/
+.DS_Store

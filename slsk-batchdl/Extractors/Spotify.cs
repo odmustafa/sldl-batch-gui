@@ -1,6 +1,7 @@
 ﻿using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
 using Swan;
+using System.Reflection;
 
 using Models;
 using Enums;
@@ -127,6 +128,80 @@ namespace Extractors
             {
                 Logger.Error($"Error removing from source: {e}");
             }
+        }
+    }
+
+
+    internal static class SpotifyPlaylistItemParser
+    {
+        public static Track? TryParseTrack(object playlistItem, int itemNumber)
+        {
+            var item = ReadProperty(playlistItem, "item") ?? ReadProperty(playlistItem, "track");
+            if (item == null)
+                return null;
+
+            var artist = ReadArtist(item);
+            var album = ReadString(ReadProperty(ReadProperty(item, "album"), "name"));
+            var title = ReadString(ReadProperty(item, "name"));
+            var durationMs = ReadInt(ReadProperty(item, "durationMs"));
+            var uri = ReadString(ReadProperty(item, "uri"));
+
+            if (artist.Length == 0 && album.Length == 0 && title.Length == 0 && uri.Length == 0)
+                return null;
+
+            return new Track
+            {
+                Artist = artist,
+                Album = album,
+                Title = title,
+                Length = durationMs > 0 ? durationMs / 1000 : -1,
+                URI = uri,
+                ItemNumber = itemNumber,
+            };
+        }
+
+        private static string ReadArtist(object item)
+        {
+            var artists = ReadProperty(item, "artists") as System.Collections.IEnumerable;
+            if (artists == null)
+                return string.Empty;
+
+            foreach (var artist in artists)
+            {
+                var name = ReadString(ReadProperty(artist, "name"));
+                if (name.Length > 0)
+                    return name;
+            }
+
+            return string.Empty;
+        }
+
+        private static object? ReadProperty(object? source, string propertyName)
+        {
+            if (source == null)
+                return null;
+
+            var property = source.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase
+            );
+
+            return property?.GetValue(source);
+        }
+
+        private static string ReadString(object? value)
+        {
+            return value as string ?? string.Empty;
+        }
+
+        private static int ReadInt(object? value)
+        {
+            return value switch
+            {
+                int intValue => intValue,
+                long longValue => (int)longValue,
+                _ => -1,
+            };
         }
     }
 
@@ -414,33 +489,34 @@ namespace Extractors
             while (true)
             {
                 var tracks = await _client.Playlists.GetItems(playlistId, new PlaylistGetItemsRequest { Limit = limit, Offset = offset });
+                var pageItems = tracks.Items?.Where(track => track != null).Cast<object>().ToList() ?? new List<object>();
 
-                foreach (var track in tracks.Items)
+                if (pageItems.Count == 0)
                 {
-                    try
+                    if (offset == 0)
                     {
-                        string[] artists = ((IEnumerable<object>)track.Track.ReadProperty("artists")).Select(a => (string)a.ReadProperty("name")).ToArray();
-                        var t = new Track()
-                        {
-                            Artist = artists[0],
-                            Album = (string)track.Track.ReadProperty("album").ReadProperty("name"),
-                            Title = (string)track.Track.ReadProperty("name"),
-                            Length = (int)track.Track.ReadProperty("durationMs") / 1000,
-                            URI = (string)track.Track.ReadProperty("uri"),
-                            ItemNumber = num++,
-                        };
-                        res.Add(t);
+                        Logger.Warn("Spotify playlist returned no accessible items. With Spotify's February 2026 API changes, playlist contents may be unavailable unless you own the playlist or are a collaborator.");
                     }
-                    catch
+
+                    break;
+                }
+
+                foreach (var track in pageItems)
+                {
+                    var parsedTrack = SpotifyPlaylistItemParser.TryParseTrack(track, num);
+                    if (parsedTrack == null)
                     {
                         continue;
                     }
+
+                    res.Add(parsedTrack);
+                    num += 1;
                 }
 
-                if (tracks.Items.Count < limit || res.Count >= max)
+                if (pageItems.Count < limit || res.Count >= max)
                     break;
 
-                offset += limit;
+                offset += pageItems.Count;
                 limit = Math.Min(max - res.Count, 100);
             }
 
