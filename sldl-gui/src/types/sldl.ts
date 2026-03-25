@@ -136,6 +136,7 @@ export interface Profile {
 
 export const LOCKED_DOWNLOAD_POLICY = {
   format: 'mp3',
+  lengthTolerance: 2,
   minBitrate: 319,
   maxBitrate: 321,
   strictConditions: true,
@@ -144,6 +145,7 @@ export const LOCKED_DOWNLOAD_POLICY = {
 export function createLockedRequiredConditions(): FileConditions {
   return {
     formats: [LOCKED_DOWNLOAD_POLICY.format],
+    lengthTolerance: LOCKED_DOWNLOAD_POLICY.lengthTolerance,
     minBitrate: LOCKED_DOWNLOAD_POLICY.minBitrate,
     maxBitrate: LOCKED_DOWNLOAD_POLICY.maxBitrate,
     bannedUsers: [],
@@ -153,6 +155,7 @@ export function createLockedRequiredConditions(): FileConditions {
 export function createLockedPreferredConditions(): FileConditions {
   return {
     formats: [LOCKED_DOWNLOAD_POLICY.format],
+    lengthTolerance: LOCKED_DOWNLOAD_POLICY.lengthTolerance,
     minBitrate: LOCKED_DOWNLOAD_POLICY.minBitrate,
     maxBitrate: LOCKED_DOWNLOAD_POLICY.maxBitrate,
     bannedUsers: [],

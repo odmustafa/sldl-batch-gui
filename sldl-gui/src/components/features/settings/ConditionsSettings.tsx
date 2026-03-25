@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../ui'
+import { Input, Checkbox, Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../ui'
 import { LOCKED_DOWNLOAD_POLICY } from '../../../types/sldl'
 
 export function ConditionsSettings() {
@@ -8,34 +8,50 @@ export function ConditionsSettings() {
         <CardHeader>
           <CardTitle>Locked Download Policy</CardTitle>
           <CardDescription>
-            This build is intentionally locked to strict MP3 downloads so search results stay consistent.
+            These download filters are enforced automatically for every run and can&apos;t be changed in the GUI.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm text-muted-foreground">
-          <ul className="list-disc space-y-2 pl-5">
-            <li><span className="font-medium text-foreground">Format:</span> {LOCKED_DOWNLOAD_POLICY.format.toUpperCase()} only</li>
-            <li><span className="font-medium text-foreground">Bitrate:</span> {LOCKED_DOWNLOAD_POLICY.minBitrate}–{LOCKED_DOWNLOAD_POLICY.maxBitrate} kbps</li>
-            <li><span className="font-medium text-foreground">Strict mode:</span> always enabled</li>
-          </ul>
-          <p>
-            Files that are not MP3 or cannot verify a bitrate inside this range are rejected automatically.
-          </p>
-        </CardContent>
-      </Card>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Format"
+              value={LOCKED_DOWNLOAD_POLICY.format}
+              helperText="Required and preferred searches are locked to MP3"
+              disabled
+              readOnly
+            />
+            <Input
+              label="Length Tolerance"
+              value={String(LOCKED_DOWNLOAD_POLICY.lengthTolerance)}
+              helperText="Tracks must be within 2 seconds of the expected Spotify/runtime length"
+              disabled
+              readOnly
+            />
+            <Input
+              label="Min Bitrate"
+              value={String(LOCKED_DOWNLOAD_POLICY.minBitrate)}
+              helperText="kbps"
+              disabled
+              readOnly
+            />
+            <Input
+              label="Max Bitrate"
+              value={String(LOCKED_DOWNLOAD_POLICY.maxBitrate)}
+              helperText="kbps"
+              disabled
+              readOnly
+            />
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Why these controls were removed</CardTitle>
-          <CardDescription>
-            The GUI now uses one fixed filtering policy for every download instead of exposing editable file-condition inputs.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            This prevents accidental drift between saved settings and the command actually sent to <code>sldl</code>.
-          </p>
-          <p>
-            Save, Import, Reset, and existing local profiles are normalized back to this locked policy automatically.
+          <Checkbox
+            label="Strict Conditions"
+            description="Missing metadata is rejected instead of being accepted by default"
+            checked={LOCKED_DOWNLOAD_POLICY.strictConditions}
+            disabled
+          />
+
+          <p className="text-sm text-muted-foreground">
+            Saved profiles, imported configs, and download launches are all normalized back to this locked policy.
           </p>
         </CardContent>
       </Card>
