@@ -29,7 +29,7 @@ public static partial class Help
     -p, --path <path>               Download directory
     --input-type <type>             [csv|youtube|spotify|bandcamp|string|list] (default: auto)
     --name-format <format>          Name format for downloaded tracks. See `--help name-format`
-        
+    
     -n, --number <maxtracks>        Download the first n tracks of a playlist
     -o, --offset <offset>           Skip a specified number of tracks
     -r, --reverse                   Download tracks in reverse order
@@ -40,17 +40,17 @@ public static partial class Help
     --playlist-path <path>          Override default path for m3u playlist file
     --no-incomplete-ext             Save files with their final name instead of a temporary
                                     `.incomplete` extension.
-        
+    
     --no-skip-existing              Do not skip downloaded tracks
     --no-write-index                Do not create a file indexing all downloaded tracks
     --index-path <path>             Override default path for sldl index
     --skip-check-cond               Check file conditions when skipping existing files
-    --skip-check-pref-cond          Check preferred conditions when skipping existing files  
+    --skip-check-pref-cond          Check preferred conditions when skipping existing files
     --skip-music-dir <path>         Also skip downloading tracks found in a music library by
                                     comparing filenames. Not 100% reliable.
     --skip-not-found                Skip searching for tracks that weren't found on Soulseek
                                     during the last run.
-        
+    
     --listen-port <port>            Port for incoming connections (default: 49998)
     --connect-timeout <ms>          Timeout used when logging in to Soulseek (default: 20000ms)
     --user-description <desc>       Optional description text for your Soulseek account
@@ -169,7 +169,7 @@ public static partial class Help
                                     the folder
     --failed-album-path             Path to move all album files to when one of the items from
                                     the directory fails to download. Set to 'delete' to delete
-                                    the files instead. Set to 'disable' keep them where they 
+                                    the files instead. Set to 'disable' keep them where they
                                     are. Default: {configured output dir}/failed
     --album-parallel-search         Run album searches in parallel, then download sequentially.
     --album-parallel-search-count   Number of parallel album searches (default: 5)
@@ -290,7 +290,7 @@ Input types
     
     # Album download shorthand:
     a:""Artist - Album""              format=flac
-    # Add strict-* conditions depending on the name 
+    # Add strict-* conditions depending on the name
     a:""Another Album""               strict-album=true
 
     The inputs can be any of the above input types, including links. The conditions are added on top
@@ -318,7 +318,8 @@ Download modes
     of each distinct album, starting with the one shared by the most users. Note that
     --min-shares-aggregate is 2 by default, meaning that albums shared by only one user will be
     ignored. Album-aggregate mode can be used to download the most popular (or all) albums by an
-    artist. It is recommended to pair it with --interactive. See Example for more details.";
+    artist. It is recommended to pair it with --interactive. See Example
+    (#download-all-albums-by-an-artist-interactively) for more details.";
 
     const string fileConditionsHelp = @"
 File conditions
@@ -411,7 +412,7 @@ Name format
     path                           Download file path (or folder if album)
     path-noext                     Download file path without extension
     ext                            File extension";
-    
+
     const string configHelp = @"
 Configuration
 
@@ -465,7 +466,7 @@ On-Complete Actions
   The --on-complete parameter allows executing commands after a track or album is downloaded.
   Multiple actions can be chained using the + prefix (note the space after +).
   Syntax: --on-complete [prefixes:]command
-  Hint: You can use --mock-files-dir to test your commands (see Testing Options).
+  Hint: You can use --mock-files-dir to test your commands (see Testing Options (#testing-options)).
 
   Prefixes
     - 1: - Execute only if track downloaded successfully
@@ -489,7 +490,7 @@ On-Complete Actions
 
   Examples
     The following examples are for Windows, but can be easily adapted for any OS.
-    Search album art with Cover Fetcher:
+    Search album art with Cover Fetcher (https://github.com/fiso64/cover-fetcher):
 
     on-complete = 1:h:a: cmd /c start """" ""path\to\CoverFetcher.exe"" --from-dir ""{path}""
 
@@ -537,8 +538,8 @@ Shortcuts & interactive mode
     const string notesAndTipsHelp = @"
 Notes
   - Terminal display issues: The printed output may appear duplicated, overlap, or not update on
-    some configurations (new windows terminal, git bash). Use another terminal or --no-progress in
-    case of issues. See https://github.com/fiso64/slsk-batchdl/issues/55.
+    some configurations (new Windows Terminal, Git Bash). Use another terminal or --no-progress if
+    needed.
   - Soulseek's rate limits: The server bans users for 30 minutes if too many searches are performed
     within a short timespan. sldl has a search limiter which can be adjusted with
     --searches-per-time and --searches-renew-time (when the limit is reached, the status of the
@@ -565,8 +566,9 @@ Tips
     - --strict-title, --strict-artist, --strict-album Filters out files whose paths do not include
       the specified title, artist, or album name (ignoring case and using boundary characters).
       Because the pref- versions of these options are enabled by default, they are only recommended
-      when you want to reduce false downloads, e.g. for wishlists where there is a high probability
-      that the item does not exist on the network.
+      when you want to reduce false downloads, e.g. for wishlists
+      (#advanced-example-automatic-wishlist-downloader) where there is a high probability that the
+      item does not exist on the network.
     - --length-tol For normal downloads, this option sets a tolerance level by which the file’s
       length can differ from the input length. The default preference (--pref-length-tol) is set to
       3 seconds.

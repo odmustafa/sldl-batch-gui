@@ -62,6 +62,32 @@ static string ToPlainText(string markdown)
             case LineBreakInline:
                 inlineSb.Append(' '); // Treat hard breaks as spaces
                 break;
+            case AutolinkInline autoLink:
+                inlineSb.Append(autoLink.Url?.Replace("\"", "\"\""));
+                break;
+            case LinkInline link:
+                var linkText = new StringBuilder();
+                foreach (var child in link)
+                {
+                    linkText.Append(GetInlineText(child));
+                }
+
+                var linkTextValue = linkText.ToString();
+                var linkUrl = link.Url?.Replace("\"", "\"\"");
+
+                if (string.IsNullOrWhiteSpace(linkTextValue))
+                {
+                    inlineSb.Append(linkUrl);
+                }
+                else if (string.IsNullOrWhiteSpace(linkUrl) || string.Equals(linkTextValue, linkUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    inlineSb.Append(linkTextValue);
+                }
+                else
+                {
+                    inlineSb.Append($"{linkTextValue} ({linkUrl})");
+                }
+                break;
             case ContainerInline container:
                 foreach (var child in container)
                 {
@@ -210,7 +236,7 @@ __HELP_TEXT_MAIN__"";
     const string fileConditionsHelp = @""__HELP_TEXT_FILE_CONDITIONS__"";
 
     const string nameFormatHelp = @""__HELP_TEXT_NAME_FORMAT__"";
-    
+
     const string configHelp = @""__HELP_TEXT_CONFIG__"";
 
     const string onCompleteHelp = @""__HELP_TEXT_ON_COMPLETE__"";

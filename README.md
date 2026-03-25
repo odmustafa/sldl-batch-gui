@@ -1,64 +1,69 @@
-# sldl
+# sldl Batch GUI
 
-A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
+`sldl-batch-gui` is the canonical home for a GUI-first desktop build of `sldl`: an Electron + React app backed by the bundled .NET Soulseek downloader source in this repository.
 
-### Features
+## What this repo ships
 
-- Accepts various input sources like CSV files, Spotify or YouTube URLs, or standard text queries
-- Can download individual songs, playlists, albums, or full artist discographies
-- Intelligently selects the best album or song based on user configuration and heuristics
-- For those who don't trust full auto downloading, album downloads can be [interactive](#shortcuts--interactive-mode). The best results will be listed first.
-- Special "aggregate" modes which can list all distinct songs or albums by a given artist available on Soulseek, sorted by popularity
-- Can skip downloading songs or albums found in a given music directory
-- Configuration profiles and auto profiles
-- Arbitratry name formatting for downloaded files
-- On-complete commands that can run when a download succeeds or fails
+- A desktop GUI in `sldl-gui/` for running `sldl` without living in the terminal
+- The backend downloader source in `slsk-batchdl/`, including the Spotify playlist parser updates used by the GUI
+- A locked download policy for this build: **MP3 only, 319-321 kbps only, always strict**
 
-## Setup
+## Locked download policy
 
-1. Head to the [releases](https://github.com/fiso64/slsk-batchdl/releases) page and get an appropriate release for your system.
-2. Put your soulseek username and password in the [configuration file](#configuration).
-3. Try it:
-    ```bash
-    sldl "Artist - Your Favorite Album" -at
-    ```
-    This will search for the album and show an interactive UI for result selection.  
-    For more examples, see the [usage examples section](#examples-2).
+This distribution is intentionally opinionated.
+
+- Required format: `mp3`
+- Required bitrate: `319-321 kbps`
+- Strict filtering: always enabled with `--strict-conditions`
+- Preferred conditions are also normalized to the same MP3 320 policy
+
+If a user edits or imports condition values, the GUI store normalizes them back to the locked policy before save and again at runtime.
+
+## Quick start
+
+### Use a release build
+
+When releases are published, download assets from:
+
+- <https://github.com/odmustafa/sldl-batch-gui/releases>
+
+Then place a compatible `sldl` binary next to the packaged app, or point the GUI to it from the **System** page.
+
+### Build from source
+
+1. Build the backend executable:
+   - `dotnet build slsk-batchdl/slsk-batchdl.csproj`
+2. Start the GUI:
+   - `cd sldl-gui`
+   - `npm install`
+   - `npm run electron:dev`
+3. In **Settings**, add your Soulseek credentials and any Spotify credentials you plan to use.
+4. If the GUI does not auto-detect `sldl`, open **System** and browse to the binary manually.
+
+Typical local backend output path after a debug build:
+
+- macOS/Linux: `slsk-batchdl/bin/Debug/net6.0/sldl`
+- Windows: `slsk-batchdl/bin/Debug/net6.0/sldl.exe`
 
 > [!NOTE]
-> `sldl` itself doesn't share your music folders. To keep the Soulseek network healthy over the long term, please also share your collection using a regular client like [Nicotine+](https://github.com/nicotine-plus/nicotine-plus) or [slskd](https://github.com/slskd/slskd).  
-> It is recommended to use `sldl` with a **separate Soulseek account** to avoid connection problems.
+> `sldl` itself does not share your music folders. To help the Soulseek network stay healthy, also share your library with a standard client such as [Nicotine+](https://github.com/nicotine-plus/nicotine-plus) or [slskd](https://github.com/slskd/slskd). Using a separate Soulseek account for automation is still recommended.
 
-## Index
- - [Options](#options)
- - [Input types](#input-types)
-   - [CSV file](#csv-file)
-   - [YouTube](#youtube)
-   - [Spotify](#spotify)
-   - [Bandcamp](#bandcamp)
-   - [MusicBrainz](#musicbrainz)
-   - [Soulseek Link](#soulseek-link)
-   - [Search string](#search-string)
-   - [List file](#list-file)
- - [Download modes](#download-modes)
-   - [Normal](#normal)
-   - [Album](#album)
-   - [Aggregate](#aggregate)
-   - [Album Aggregate](#album-aggregate)
- - [Configuration](#configuration)
- - [File conditions](#file-conditions)
- - [Name format](#name-format)
- - [On-Complete Actions](#on-complete-actions)
- - [Shortcuts \& interactive mode](#shortcuts--interactive-mode)
- - [Examples](#examples-2)
- - [Notes](#notes-1)
- - [Tips](#tips)
- - [Docker](#docker)
+## Repository guide
 
+- `sldl-gui/` — Electron main process, preload bridge, React renderer, and packaging config
+- `slsk-batchdl/` — .NET 6 backend downloader source (`sldl`)
+- `slsk-batchdl.Tests/` — backend test suite
+- `README.md` — release-facing overview plus detailed backend CLI reference below
+- `sldl-gui/README.md` — focused development and packaging guide for the GUI app
+
+## Backend CLI reference
+
+The remainder of this file preserves the detailed `sldl` CLI reference used by the backend help generator during .NET builds.
 
 ## Options
 <!-- sldl-help:start(main) -->
 #### Required Arguments
+
 ```
 <input>                         A url, search string, or path to a local CSV file.
                                 Run `--help input` to view the accepted inputs.
@@ -66,12 +71,14 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 --user <username>               Soulseek username
 --pass <password>               Soulseek password
 ```
+
 #### General Options
+
 ```
 -p, --path <path>               Download directory
 --input-type <type>             [csv|youtube|spotify|bandcamp|string|list] (default: auto)
 --name-format <format>          Name format for downloaded tracks. See `--help name-format`
-    
+
 -n, --number <maxtracks>        Download the first n tracks of a playlist
 -o, --offset <offset>           Skip a specified number of tracks
 -r, --reverse                   Download tracks in reverse order
@@ -82,17 +89,17 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 --playlist-path <path>          Override default path for m3u playlist file
 --no-incomplete-ext             Save files with their final name instead of a temporary
                                 `.incomplete` extension.
-    
+
 --no-skip-existing              Do not skip downloaded tracks
 --no-write-index                Do not create a file indexing all downloaded tracks
 --index-path <path>             Override default path for sldl index
 --skip-check-cond               Check file conditions when skipping existing files
---skip-check-pref-cond          Check preferred conditions when skipping existing files  
+--skip-check-pref-cond          Check preferred conditions when skipping existing files
 --skip-music-dir <path>         Also skip downloading tracks found in a music library by
                                 comparing filenames. Not 100% reliable.
 --skip-not-found                Skip searching for tracks that weren't found on Soulseek
                                 during the last run.
-    
+
 --listen-port <port>            Port for incoming connections (default: 49998)
 --connect-timeout <ms>          Timeout used when logging in to Soulseek (default: 20000ms)
 --user-description <desc>       Optional description text for your Soulseek account
@@ -100,7 +107,9 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 --on-complete <command>         Run a command when a download completes. See `--help
                                 on-complete`
 ```
+
 #### Search Options
+
 ```
 --fast-search                   Begin downloading as soon as a file satisfying the preferred
                                 conditions is found. Only for normal download mode.
@@ -136,7 +145,9 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 --searches-renew-time <sec>     Controls how often available searches are replenished.
                                 See `--help search`. (default: 220)
 ```
+
 #### Spotify Options
+
 ```
 --spotify-id <id>               Spotify client ID
 --spotify-secret <secret>       Spotify client secret
@@ -144,14 +155,18 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 --spotify-refresh <token>       Spotify refresh token
 --remove-from-source            Remove downloaded tracks from source playlist
 ```
-#### YouTube Options 
+
+#### YouTube Options
+
 ```
 --youtube-key <key>             Youtube data API key
 --get-deleted                   Attempt to retrieve titles of deleted videos from wayback
                                 machine. Requires yt-dlp.
 --deleted-only                  Only retrieve & download deleted music.
 ```
+
 #### CSV File Options
+
 ```
 --artist-col <name>             Artist column name
 --title-col <name>              Track title column name
@@ -167,7 +182,9 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
                                 names; attempt to parse them into title and artist names.
 --remove-from-source            Remove downloaded tracks from source CSV file
 ```
+
 #### File Condition Options
+
 ```
 --format <formats>              Accepted file format(s), comma-separated, without periods
 --length-tol <sec>              Length tolerance in seconds
@@ -196,7 +213,9 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
                                 default; if --min-bitrate is set, ignores any files with
                                 unknown bitrate. Warning: Available props depend on client
 ```
+
 #### Album Download Options
+
 ```
 -a, --album                     Album download mode: Download a folder
 -t, --interactive               Interactively select folders. See --help shortcuts.
@@ -211,12 +230,14 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
                                 the folder
 --failed-album-path             Path to move all album files to when one of the items from
                                 the directory fails to download. Set to 'delete' to delete
-                                the files instead. Set to 'disable' keep them where they 
+                                the files instead. Set to 'disable' keep them where they
                                 are. Default: {configured output dir}/failed
 --album-parallel-search         Run album searches in parallel, then download sequentially.
---album-parallel-search-count   Number of parallel album searches (default: 5) 
+--album-parallel-search-count   Number of parallel album searches (default: 5)
 ```
+
 #### Aggregate Download Options
+
 ```
 -g, --aggregate                 Aggregate download mode: Find and download all distinct
                                 songs associated with the provided artist, album, or title.
@@ -227,7 +248,9 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 --relax-filtering               Slightly relax file filtering in aggregate mode to include
                                 more results
 ```
+
 #### Printing & Debug Options
+
 ```
 -v, --verbose                   Print extra debug info
 --log-file <path>               Write debug info to a specified file
@@ -246,7 +269,9 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 --mock-files-dir <path>         Directory containing files to simulate download results
 --mock-files-no-read-tags       Only read filenames when simulating (much faster)
 ```
+
 ### Notes
+
 - Flags can be explicitly disabled by setting them to false, e.g. `--interactive false`.
 - Single-character flags can be combined, e.g. `-at` for `-a -t`.
 - Acronyms of two- and `--three-word-flags` like `--twf` are also accepted. E.g. `--Mbr` for `--max-bitrate`.
@@ -254,25 +279,29 @@ A smart and configurable downloader for Soulseek. Built with Soulseek.NET.
 
 <!-- sldl-help:start(input) -->
 ## Input types
-The input type is usually determined automatically. You can also manually set it with `--input-type`.  
+
+The input type is usually determined automatically. You can also manually set it with `--input-type`.
 The following input types are available:
 
-###  CSV file
+### CSV file
+
 Path to a local CSV file. Use a csv file containing track information to download a list of
 songs or albums. Only the title or album column is required, but extra info may improve search
 result ranking. If the columns have common names ('Artist', 'Title', 'Album', 'Length', etc)
-then it's not required to manually specify them, otherwise you must provide at least `--title-col` or `--album-col`.   
+then it's not required to manually specify them, otherwise you must provide at least `--title-col` or `--album-col`.
 Rows that do not have any text in the title column will be treated as album downloads.
 
-###  YouTube
-A YouTube playlist url. Download songs from a youtube playlist.  
+### YouTube
+
+A YouTube playlist url. Download songs from a youtube playlist.
 **Note:** The default method to retrieve playlists might not reliably return all videos. To get all
 videos, you can use the official API by providing a key with `--youtube-key`. A key can
-be obtained at https://console.cloud.google.com. Create a new project, click 'Enable Api' and
+be obtained at <https://console.cloud.google.com>. Create a new project, click 'Enable Api' and
 search for 'youtube data', then follow the prompts.
 
 ### Spotify
-Any playlist or album url, or `spotify-likes` for your liked songs, or `spotify-albums` for liked albums.  
+
+Any playlist or album url, or `spotify-likes` for your liked songs, or `spotify-albums` for liked albums.
 Credentials are required when downloading a private playlist or liked music.
 
 #### Using Credentials
@@ -280,13 +309,14 @@ Credentials are required when downloading a private playlist or liked music.
 <details>
   <summary>Click to expand</summary>
 
-Create a Spotify application at https://developer.spotify.com/dashboard/applications with a redirect url http://127.0.0.1:48721/callback. Obtain an application ID and secret from the created application dashboard.
+Create a Spotify application at <https://developer.spotify.com/dashboard/applications> with a redirect url <http://127.0.0.1:48721/callback>. Obtain an application ID and secret from the created application dashboard.
 
 Start sldl with the obtained credentials and an authorized action to trigger the Spotify app login flow:
 
 ```
 sldl spotify-likes --spotify-id 123456 --spotify-secret 123456 -n 1 --print-tracks
 ```
+
 sldl will try to open a browser automatically but will fallback to logging the login flow URL to output. After login flow is complete sldl will output a token and refresh token and finish running the current command.
 
 To skip requiring login flow every time sldl is used the token and refresh token can be provided to sldl (hint: store this info in the config file to make commands less verbose):
@@ -299,24 +329,29 @@ spotify-token access is only valid for 1 hour. spotify-refresh will enable sldl 
 </details>
 
 ### Bandcamp
+
 A bandcamp track, album, or artist url. Download a single track, an album, or an artist's
 entire discography. Also accepts wishlist URLs. Extraction might fail due to cloudflare; download the html to a local file and point sldl to it using `--from-html` in case of issues.
 
 ### MusicBrainz
+
 A MusicBrainz.org URL for a release, release group, or collection.
+
 - A `/release/...` URL is treated as a single album download with a strict track count.
 - A `/release-group/...` URL is also treated as a single album download. It tries to pick the most common version of the album. Sets the minimum album track count to the chosen release track count, and no maximum track count unless `--extract-max-track-count` is set.
 - A `/collection/...` URL is treated as a list of albums, downloading each release contained within the collection.
 
 ### Soulseek Link
+
 A direct path starting with `slsk://`. Paths ending in `/` will be treated as album downloads.
 
 ### Search string
+
 Name of the track, album, or artist to search for. The input can either be an arbitrary
 search string (like what you would type in the soulseek search bar), or a comma-separated
 list of properties of the form `title=Song Name, artist=Artist Name, length=215`.
 
-The following properties are accepted: title, artist, album, length (in seconds), 
+The following properties are accepted: title, artist, album, length (in seconds),
 artist-maybe-wrong, album-track-count.
 
 String input accepts a shorthand for track and album downloads: The input `ARTIST - TITLE`
@@ -324,39 +359,47 @@ will be parsed as `artist=ARTIST, title=TITLE` when downloading songs, and
 `artist=ARTIST, album=TITLE` when run with `--album`.
 
 ### List file
+
 List input must be manually activated with `--input-type=list`. The input must be a path to a text
 file containing lines of the following form:
+
 ```ini
 # Any input type                conditions (optional)           pref. conditions (optional)
 "Artist - Song"                 "format=mp3; br>128"            "br >= 320"
 
 # Album download shorthand:
 a:"Artist - Album"              format=flac
-# Add strict-* conditions depending on the name 
+# Add strict-* conditions depending on the name
 a:"Another Album"               strict-album=true
 ```
+
 The inputs can be any of the above input types, including links. The conditions are added on top of the
-configured conditions and can be omitted. 
+configured conditions and can be omitted.
 <!-- sldl-help:end -->
 
 <!-- sldl-help:start(download-modes) -->
 ## Download modes
+
 ### Normal
+
 The default for playlists. Downloads a single file for every input entry.
 
 ### Album
+
 sldl will search for the album and download an entire folder including non-audio
 files. Activated when the input is a link to a spotify or bandcamp album, when the input
 string or csv row has no track title, or when `-a/--album` is enabled.
 
 ### Aggregate
+
 With `-g/--aggregate`, sldl performs an ordinary search for the input, then attempts to
 group the results into distinct songs and download one of each, starting with the one shared
 by the most users. Note that `--min-shares-aggregate` is 2 by default, meaning that songs
-shared by only one user will be ignored. Aggregate mode can be used to download all songs by 
-an artist.  
+shared by only one user will be ignored. Aggregate mode can be used to download all songs by
+an artist.
 
 ### Album Aggregate
+
 Activated when both `--album` and `--aggregate` are enabled. sldl will group shares and
 download one of each distinct album, starting with the one shared by the most users. Note
 that `--min-shares-aggregate` is 2 by default, meaning that albums shared by only one user
@@ -366,7 +409,9 @@ by an artist. It is recommended to pair it with `--interactive`. See [Example](#
 
 <!-- sldl-help:start(config) -->
 ## Configuration
+
 ### Config Location
+
 sldl will look for a file named sldl.conf in the following locations:
 
 - `~/AppData/Roaming/sldl/sldl.conf`
@@ -375,25 +420,32 @@ sldl will look for a file named sldl.conf in the following locations:
 - `{sldl executable dir}/sldl.conf`
 
 ### Syntax
+
 Example config file:
+
 ```ini
 username = your-username
 password = your-password
 pref-format = flac
 fast-search = true
 ```
+
 Lines starting with hashtags # will be treated as comments. Tildes in paths are expanded as the user
 directory (even on windows). The path variable `{bindir}` stores the directory of the sldl binary.
 
 ### Configuration profiles
+
 Profiles are supported:
+
 ```ini
 [lossless]
 pref-format = flac,wav
 ```
+
 To activate the above profile, run `--profile lossless`. To list all available profiles,
-run `--profile help`.  
+run `--profile help`.
 Profiles can be activated automatically based on a few simple conditions:
+
 ```ini
 # never automatically cancel album downloads in interactive mode
 [no-stale]
@@ -405,8 +457,10 @@ max-stale-time = 9999999
 profile-cond = input-type == "youtube"
 path = ~/downloads/sldl-youtube
 ```
-The following operators are supported for use in profile-cond: &&, ||, ==, !=, !{bool}.  
+
+The following operators are supported for use in profile-cond: &&, ||, ==, !=, !{bool}.
 The following variables are available:
+
 ```
 input-type        ("youtube"|"csv"|"string"|"bandcamp"|"spotify")
 download-mode     ("normal"|"aggregate"|"album"|"album-aggregate")
@@ -416,11 +470,13 @@ interactive       (bool)
 
 <!-- sldl-help:start(file-conditions) -->
 ## File conditions
+
 Files not satisfying the required conditions will be ignored. Files satisfying pref-conditions
 will be preferred: With `--pref-format flac,wav`, sldl will try to download lossless files if
 available while still accepting lossy files.
 
 There are no default required conditions. The default preferred conditions are:
+
 ```ini
 pref-format = mp3
 pref-length-tol = 3
@@ -430,10 +486,11 @@ pref-max-samplerate = 48000
 pref-strict-title = true
 pref-strict-album = true
 ```
+
 sldl will therefore prefer mp3 files with bitrate between 200 and 2500 kbps, and whose length
 differs from the supplied length by no more than 3 seconds. Moreover, it will prefer files
 whose paths contain the supplied title and album. Changing the last two preferred conditions is
-not recommended.  
+not recommended.
 
 Note that files satisfying only a subset of the conditions will be preferred over files that don't
 satisfy any condition. Run a search with `--print results-full` to reveal the sorting logic.
@@ -442,9 +499,10 @@ Conditions can also be supplied as a semicolon-delimited string with `--cond` an
 `--cond "br>=320; format=mp3,ogg; sr<96000"`.
 
 ### Note on availability of metadata
+
 Some info may be unavailable depending on the client used by the peer. If (e.g) `--min-bitrate`
 is set, then sldl will still accept any file with unknown bitrate. To reject all files where one
-or more of the checked properties is null (unknown), enable `--strict-conditions`.  
+or more of the checked properties is null (unknown), enable `--strict-conditions`.
 
 This flag should be used with care: It's easy to accidentally exclude all files from users with
 certain clients. For example, because the standard Soulseek client does not broadcast the bitrate,
@@ -455,25 +513,28 @@ will be ranked at the bottom due to the default pref- bitrate checks.
 
 <!-- sldl-help:start(name-format) -->
 ## Name format
+
 Variables enclosed in {} will be replaced by the corresponding file tag value.
 Name format supports subdirectories as well as conditional expressions like {tag1|tag2} - If
 tag1 is null, use tag2. This can be chained arbitrarily many times. String literals enclosed
 in parentheses are ignored in the null check.
 
 ### Examples
-- `{artist} - {title}`  
+
+- `{artist} - {title}`
     Always name it 'Artist - Title'. Because some files on Soulseek are untagged, the
     following is generally preferred:
-- `{artist( - )title|filename}`  
+- `{artist( - )title|filename}`
     If artist and title are not null, name it 'Artist - Title', otherwise use the original
     filename.
-- `{albumartist(/)album(/)track(. )title|(missing-tags/)slsk-foldername(/)slsk-filename}`  
+- `{albumartist(/)album(/)track(. )title|(missing-tags/)slsk-foldername(/)slsk-filename}`
     Sort files into artist/album folders if all tags are present, otherwise put them in
-    the 'missing-tags' folder.   
+    the 'missing-tags' folder.
 
 ### Available variables
 
 The following values are read from the downloaded file's tags:
+
 ```
 artist                         First artist
 artists                        Artists, joined with '&'
@@ -488,6 +549,7 @@ length                         Track length (in seconds)
 ```
 
 The following values are taken from the input source (CSV file data, Spotify, etc):
+
 ```
 sartist                        Source artist
 stitle                         Source track title
@@ -499,6 +561,7 @@ row/line                       Line number (1-indexed, only for CSV or list inpu
 ```
 
 Other variables:
+
 ```
 type                           Track type
 state                          Track state
@@ -520,13 +583,15 @@ ext                            File extension
 
 <!-- sldl-help:start(on-complete) -->
 ## On-Complete Actions
-The `--on-complete` parameter allows executing commands after a track or album is downloaded. Multiple actions can be chained using the `+ ` prefix (note the space after +).
+
+The `--on-complete` parameter allows executing commands after a track or album is downloaded. Multiple actions can be chained using the `+` prefix (note the space after +).
 
 **Syntax:** `--on-complete [prefixes:]command`
 
 Hint: You can use `--mock-files-dir` to test your commands (see [Testing Options](#testing-options)).
 
 ### Prefixes
+
 - `1:` - Execute only if track downloaded successfully
 - `2:` - Execute only if track failed to download
 - `a:` - Execute only after album download
@@ -540,6 +605,7 @@ When using u: prefix, the command output should be `new_state;new_path` to updat
 ### Variables
 
 The available variables are the same as in name-format, with the following additions:
+
 - `{exitcode}` - Previous command's exit code
 - `{stdout}` - Previous command's stdout (requires r:)
 - `{stderr}` - Previous command's stderr (requires r:)
@@ -549,19 +615,22 @@ The available variables are the same as in name-format, with the following addit
 
 ### Examples
 
-The following examples are for Windows, but can be easily adapted for any OS.  
-  
+The following examples are for Windows, but can be easily adapted for any OS.
+
 Search album art with [Cover Fetcher](https://github.com/fiso64/cover-fetcher):
+
 ```ini
 on-complete = 1:h:a: cmd /c start "" "path\to\CoverFetcher.exe" --from-dir "{path}"
 ```
 
 Queue downloaded audio files in foobar2000:
+
 ```ini
 on-complete = 1:h: cmd /c if {is-audio}==true start "" "path\to\foobar2000.exe" /immediate /add "{path}"
 ```
 
 Convert downloaded audio files to MP3 (requires ffmpeg):
+
 ```ini
 # Check if file is audio and not already MP3
 on-complete =   1:h:r: cmd /c if {is-audio}==true if /i not {ext}==.mp3 if not exist "{path-noext}.mp3" echo true
@@ -576,13 +645,17 @@ on-complete = + 1:h:u: cmd /c if {stdout}==success (del "{path}" & echo "1;{path
 
 <!-- sldl-help:start(shortcuts) -->
 ## Shortcuts & interactive mode
+
 ### Shortcuts
+
 To cancel a running album download, press `C`.
 
 ### Interactive mode
+
 Interactive mode for albums can be enabled with `-t`/`--interactive`. It enables users to choose the desired folder or download specific files from it.
 
 Key bindings:
+
 ```
 Up/p            previous folder
 Down/n          next folder
@@ -604,71 +677,87 @@ cd subdir       go to subfolder
 ## Examples
 
 ##### Download tracks from a csv file
+
 ```bash
 sldl "tracks.csv"
 ```
 
 ##### Download a Spotify playlist or your liked songs
+
 ```bash
 sldl "https://open.spotify.com/playlist/id"
 sldl "spotify-likes"
 ```
 
 ##### Download the albums of a spotify playlist
+
 ```bash
 sldl "https://open.spotify.com/playlist/id" -a
 ```
 
 ##### Download a youtube playlist with yt-dlp fallback & retrieving deleted video names
+
 ```bash
 sldl "https://youtube.com/playlist/id" --get-deleted --yt-dlp
 ```
 
 ##### Interactive album download, only include albums with 13 or more tracks
+
 ```bash
 sldl "Album Name" -at --atc 13+
 ```
 
 ##### Download a specific song by name and length, preferring lossless
+
 ```bash
 sldl "MC MENTAL @ HIS BEST, length=242" --pref-format "flac,wav"
-``` 
+```
 
 ##### Download all albums by an artist interactively
+
 ```bash
 sldl "artist=MC MENTAL" -agt
 ```
+
 This command will show an interactive UI listing all albums with appearances by the specified artist, starting with the most popular (based on the number of shares). You can download or skip albums as needed. sldl will do its best to group shares of the same album into a single entry (but due to differences in filenames this will not be 100% reliable). For some artists, it can be useful to add `--strict-artist` to avoid listing incorrect results. There is currently no way to only include albums *by that artist*, rather than every album/compilation where that artist appeared (feel free to request it if needed).
 
 ##### Print all songs by an artist which are not in your library
+
 ```bash
 sldl "artist=MC MENTAL" -g --skip-music-dir "path/to/music" --print results
 ```
 
 ### Advanced example: Automatic wishlist downloader
+
 Create a file named `wishlist.txt`, and add some items as detailed in [Input types: List](#list-file):
+
 ```
 "Artist - My Favorite Song"            format=flac
 a:"Artist - Some Album"                strict-album=true;album-track-count=5
 ```
+
 Add a profile to your `sldl.conf`:
+
 ```ini
 [wishlist]
-input = ~/sldl/wishlist.txt 
+input = ~/sldl/wishlist.txt
 input-type = list
 index-path = ~/sldl/wishlist-index.sldl
 album-parallel-search = true
 ```
-This will create a global index file `wishlist-index.sldl` which will be scanned every time sldl is run to skip wishlist items that have already been downloaded. If you want to continue searching until a version satisfying the preferred conditions is found, also add `skip-check-pref-cond = true` (note that this requires the files to remain in the same spot after being downloaded).  
+
+This will create a global index file `wishlist-index.sldl` which will be scanned every time sldl is run to skip wishlist items that have already been downloaded. If you want to continue searching until a version satisfying the preferred conditions is found, also add `skip-check-pref-cond = true` (note that this requires the files to remain in the same spot after being downloaded).
 
 Now you can manually run, or set up a cron job / scheduled task to periodically run sldl with the following option:
+
 ```bash
 sldl --profile wishlist
 ```
 
 <!-- sldl-help:start(notes-and-tips) -->
 ## Notes
-- **Terminal display issues**: The printed output may appear duplicated, overlap, or not update on some configurations (new windows terminal, git bash). Use another terminal or `--no-progress` in case of issues. See https://github.com/fiso64/slsk-batchdl/issues/55.
+
+- **Terminal display issues**: The printed output may appear duplicated, overlap, or not update on some configurations (new Windows Terminal, Git Bash). Use another terminal or `--no-progress` if needed.
 - **Soulseek's rate limits**: The server bans users for 30 minutes if too many searches are performed within a short timespan. sldl has a search limiter which can be adjusted with `--searches-per-time` and `--searches-renew-time` (when the limit is reached, the status of the downloads will be 'Waiting'). By default it is configured to allow up to 34 searches every 220 seconds.
 
 ## Tips
@@ -677,26 +766,26 @@ sldl --profile wishlist
 
 - It's always best to provide the least input necessary to uniquely identify an album or song.
   - Sometimes including the artist can be undesirable (e.g. "Various Artists"). For spotify or bandcamp inputs, you can remove the artist name with `--regex A:.*`.
-  - Use `--remove-ft` to remove "feat." or "ft." artists 
-- You can download an entire album based on the name of one of its songs by searching for that name with `-a/--album`. 
+  - Use `--remove-ft` to remove "feat." or "ft." artists
+- You can download an entire album based on the name of one of its songs by searching for that name with `-a/--album`.
 - When searching for a single song with a string input, you can provide the album name in addition. The album name will not be included in the query, but search results containing it will be preferred (due to pref-strict-album).
-- When dealing with YouTube playlists you may want to remove any text in parentheses (like (Video)), as well as "Official" and "Lyrics" with `--regex "[\[\(].*?[\]\)]|(?i:lyrics)|(?i:official)"` 
+- When dealing with YouTube playlists you may want to remove any text in parentheses (like (Video)), as well as "Official" and "Lyrics" with `--regex "[\[\(].*?[\]\)]|(?i:lyrics)|(?i:official)"`
 
 ### Filtering Irrelevant Results
 
 sldl typically selects the correct files as long as they appear in the search results. By default, it always tries to download something and does no additional filtering. However, you can use the following options to filter your search results:
 
-- `--strict-title`, `--strict-artist`, `--strict-album`  
+- `--strict-title`, `--strict-artist`, `--strict-album`
   Filters out files whose paths do not include the specified title, artist, or album name (ignoring case and using boundary characters). Because the pref- versions of these options are enabled by default, they are only recommended when you want to reduce false downloads, e.g. for [wishlists](#advanced-example-automatic-wishlist-downloader) where there is a high probability that the item does not exist on the network.
 
-- `--length-tol`  
+- `--length-tol`
   For normal downloads, this option sets a tolerance level by which the file’s length can differ from the input length. The default preference (--pref-length-tol) is set to 3 seconds.
 
-- `--album-track-count`  
+- `--album-track-count`
   When downloading an album, you can specify this option to ensure the album contains a certain number of tracks. For instance, if the input is a Spotify or Bandcamp album, this field is automatically set to `n+` (where n is the number of tracks on the album). This ensures that only albums with at least n tracks are accepted (useful when there are more complete versions of the album on soulseek).
 
-
 ### Speeding things up
+
 The following options will make it go faster, but may decrease search result quality or cause instability:
 
 - `--fast-search` skips waiting until the search completes and downloads as soon as a file matching the preferred conditions is found
@@ -705,23 +794,26 @@ The following options will make it go faster, but may decrease search result qua
 - `--album-parallel-search` enables parallel searching for album entries
 
 ### Testing Options
+
 You can test almost any aspect of the search and downloading logic by using `--mock-files-dir` and pointing it to a local directory containing audio files. This directory will then be used instead of searching Soulseek. Example:
+
 ```
 sldl "Artist - Album" -at --mock-files-dir /path/to/dir
 ```
+
 If you plan to use a large music library, you may want to add `--mock-files-no-read-tags` to improve the initial loading performance. But note that reading tags is required when filtering by metadata such as length or bitrate.
 
 <!-- sldl-help:end -->
 
 ## Docker
 
-A docker container for running `sldl` can be built from this repository. The image supports linux x86/ARM. 
+A docker container for running `sldl` can be built from this repository. The image supports linux x86/ARM.
 
 To build and start container:
 
 ```shell
-clone https://github.com/fiso64/slsk-batchdl
-cd slsk-batchdl
+git clone https://github.com/odmustafa/sldl-batch-gui
+cd sldl-batch-gui
 docker compose up -d
 ```
 
@@ -734,8 +826,8 @@ sldl --help
 
 The compose stack mounts two directories relative to where `docker-compose.yml` is located which can be used for file management:
 
-* `/config` (at `./config` on host) - put your `sldl.conf` [configuration](#configuration-) in this directory and then use `sldl -c /config ...` to use your configuration in the container
-* `/data` (at `./data` on host) - use as the download directory IE `sldl -p /data ...`
+- `/config` (at `./config` on host) - put your `sldl.conf` [configuration](#configuration-) in this directory and then use `sldl -c /config ...` to use your configuration in the container
+- `/data` (at `./data` on host) - use as the download directory IE `sldl -p /data ...`
 
 ### File Permissions
 
@@ -743,11 +835,10 @@ If you are running Docker on a **Linux Host** you should specify `user:group` pe
 
 To get the UID and GID for the current user run these commands from a terminal:
 
-* `id -u` -- prints UID
-* `id -g` -- prints GID
+- `id -u` -- prints UID
+- `id -g` -- prints GID
 
 Replace these with the corresponding variable (`PUID` `PGID`) in `docker-compose.yml`.
-
 
 ### Cron
 
